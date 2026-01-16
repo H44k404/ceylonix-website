@@ -36,6 +36,16 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Large media files (store these separately or use Git LFS)
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.wmv
+public/images/hero-bg.mov
+public/videos/hero-video.mp4
+public/videos/about-video.mp4
+
 # Uploads (if storing files locally)
 /ceylonix-backend/uploads
 /ceylonix-backend/data/*.json
