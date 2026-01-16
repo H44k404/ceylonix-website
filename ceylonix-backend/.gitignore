@@ -1,0 +1,7 @@
+# Ignore node modules
+node_modules/
+.env
+data/
+uploads/
+*.log
+.DS_Store
