@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navigation from './components/common/Navigation';
 import Hero from './components/sections/Hero';
 import About from './components/sections/About';
@@ -7,12 +7,29 @@ import Portfolio from './components/sections/Portfolio';
 import Booking from './components/sections/Booking';
 import Testimonials from './components/sections/Testimonials';
 import Contact from './components/sections/Contact';
+import LogoCarousel from './components/sections/LogoCarousel';
 import Footer from './components/common/Footer';
-import { useScrollToSection, useActiveSection } from './hooks/useScroll';
+import AdminPage from './pages/AdminPage';
 
-const CeylonixWebsite = () => {
-  const activeSection = useActiveSection();
-  const scrollToSection = useScrollToSection();
+function App() {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Check if we're on admin page
+  const isAdminPage = window.location.pathname === '/admin';
+
+  // Handle page navigation with smooth transition
+  const handleNavigate = (page) => {
+    if (page !== currentPage) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentPage(page);
+        setIsTransitioning(false);
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 150);
+    }
+  };
 
   useEffect(() => {
     // Initialize scroll reveal animations
@@ -35,6 +52,10 @@ const CeylonixWebsite = () => {
       revealElements.forEach((el) => observer.unobserve(el));
     };
   }, []);
+
+  if (isAdminPage) {
+    return <AdminPage />;
+  }
 
   return (
     <div className="bg-black text-white min-h-screen overflow-x-hidden">
@@ -133,26 +154,126 @@ const CeylonixWebsite = () => {
         .pulse-slow {
           animation: pulse-slow 3s ease-in-out infinite;
         }
+
+        /* Page Transition Animations */
+        @keyframes pageEnter {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes pageExit {
+          from {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.98);
+          }
+        }
+
+        .page-content {
+          animation: pageEnter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .page-content.exiting {
+          animation: pageExit 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Smooth button transitions */
+        button, .button-like {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover, .button-like:hover {
+          transform: translateY(-2px);
+          backdrop-filter: blur(8px);
+        }
+
+        button:active, .button-like:active {
+          transform: translateY(0);
+        }
       `}</style>
 
       <Navigation
-        activeSection={activeSection}
-        onNavigate={scrollToSection}
+        activeSection={currentPage}
+        onNavigate={handleNavigate}
       />
 
-      <main>
-        <Hero onNavigate={scrollToSection} />
-        <About />
-        <Services />
-        <Portfolio />
-        <Booking />
-        <Testimonials />
-        <Contact />
+      <main className={`page-content ${isTransitioning ? 'exiting' : ''}`}>
+        {/* Home page shows hero + all sections */}
+        {currentPage === 'home' && (
+          <>
+            <Hero onNavigate={handleNavigate} />
+            <About />
+            <Services />
+            <Portfolio />
+            <Booking />
+            <Testimonials />
+            <Contact />
+            <LogoCarousel />
+            <Footer />
+          </>
+        )}
+        
+        {/* About page */}
+        {currentPage === 'about' && (
+          <>
+            <About />
+            <LogoCarousel />
+            <Footer />
+          </>
+        )}
+        
+        {/* Services page */}
+        {currentPage === 'services' && (
+          <>
+            <Services />
+            <LogoCarousel />
+            <Footer />
+          </>
+        )}
+        
+        {/* Portfolio page */}
+        {currentPage === 'portfolio' && (
+          <>
+            <Portfolio />
+            <Footer />
+          </>
+        )}
+        
+        {/* Booking page */}
+        {currentPage === 'booking' && (
+          <>
+            <Booking />
+            <Footer />
+          </>
+        )}
+        
+        {/* Testimonials page */}
+        {currentPage === 'testimonials' && (
+          <>
+            <Testimonials />
+            <Footer />
+          </>
+        )}
+        
+        {/* Contact page */}
+        {currentPage === 'contact' && (
+          <>
+            <Contact />
+            <Footer />
+          </>
+        )}
       </main>
-
-      <Footer />
     </div>
   );
-};
+}
 
-export default CeylonixWebsite;
+export default App;

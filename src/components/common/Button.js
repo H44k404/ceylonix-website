@@ -10,13 +10,13 @@ const Button = ({
   disabled = false,
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black';
+  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black';
 
   const variants = {
-    primary: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 focus:ring-orange-500 shadow-lg hover:shadow-xl',
-    secondary: 'bg-white/10 text-white border border-white/20 hover:bg-white/20 focus:ring-white/50 backdrop-blur-sm',
-    outline: 'border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white focus:ring-orange-500',
-    ghost: 'text-white hover:bg-white/10 focus:ring-white/50'
+    primary: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 focus:ring-orange-500',
+    secondary: 'text-white border border-white/20 hover:border-white/40 focus:ring-white/50 backdrop-blur-sm bg-white/5',
+    outline: 'border-2 border-orange-500 text-orange-500 hover:text-orange-400 focus:ring-orange-500',
+    ghost: 'text-white hover:text-orange-400 focus:ring-white/50'
   };
 
   const sizes = {

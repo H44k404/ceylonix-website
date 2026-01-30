@@ -100,8 +100,8 @@ const Navigation = ({
                 onClick={() => handleNavigate(item.id)}
                 className={`block w-full text-left px-3 py-2 text-base font-medium transition-colors ${
                   activeSection === item.id
-                    ? 'text-orange-500 bg-orange-500/10'
-                    : 'text-white hover:text-orange-400 hover:bg-white/10'
+                    ? 'text-orange-500'
+                    : 'text-white hover:text-orange-400'
                 }`}
               >
                 {item.label}

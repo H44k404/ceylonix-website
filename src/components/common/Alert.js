@@ -1,8 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
 
 const Alert = ({ type = 'success', title, message, onClose, autoClose = true, autoCloseDuration = 5000 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const alertRef = useRef(null);
+
+  useEffect(() => {
+    // Scroll page to top when alert appears so user can see it
+    if (isVisible) {
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     if (autoClose) {
@@ -21,7 +31,8 @@ const Alert = ({ type = 'success', title, message, onClose, autoClose = true, au
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 max-w-md animate-in slide-in-from-top-2 fade-in duration-300`}
+      ref={alertRef}
+      className={`fixed top-20 right-4 z-50 max-w-md animate-in slide-in-from-top-2 fade-in duration-300`}
     >
       <div
         className={`rounded-lg p-4 shadow-lg border ${

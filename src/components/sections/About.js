@@ -1,12 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Award, Users, Camera } from 'lucide-react';
 
 const About = () => {
+  const [animatedValues, setAnimatedValues] = useState({
+    0: 0,
+    1: 0,
+    2: 0
+  });
+
   const stats = [
-    { icon: Award, value: '500+', label: 'Projects Completed' },
-    { icon: Users, value: '200+', label: 'Happy Clients' },
-    { icon: Camera, value: '50K+', label: 'Photos Captured' }
+    { icon: Award, value: '500+', numericValue: 500, label: 'Projects Completed' },
+    { icon: Users, value: '200+', numericValue: 200, label: 'Happy Clients' },
+    { icon: Camera, value: '50K+', numericValue: 50000, label: 'Photos Captured' }
   ];
+
+  // Counter animation effect
+  useEffect(() => {
+    const duration = 2000; // 2 seconds animation
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const newValues = {};
+      stats.forEach((stat, index) => {
+        newValues[index] = Math.floor(stat.numericValue * progress);
+      });
+
+      setAnimatedValues(newValues);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, []);
 
   return (
     <section id="about" className="py-20 px-4 sm:px-6 lg:px-8">
@@ -37,11 +67,34 @@ const About = () => {
 
             <div className="grid grid-cols-3 gap-6">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="bg-orange-500/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                    <stat.icon className="w-8 h-8 text-orange-500" />
+                <div key={index} className="text-center group cursor-pointer">
+                  <style>{`
+                    .stat-circle-${index} {
+                      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                      padding: 1rem;
+                    }
+                    
+                    .stat-circle-${index}:hover {
+                      padding: 0;
+                      border-radius: 50%;
+                    }
+                  `}</style>
+                  <div className={`stat-circle-${index} bg-orange-500/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-500/40 group-hover:shadow-lg group-hover:shadow-orange-500/30`}>
+                    <stat.icon className="w-8 h-8 text-orange-500 group-hover:scale-110 transition-transform duration-300" />
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {animatedValues[index] > 0 ? (
+                      <>
+                        {animatedValues[index] === stats[index].numericValue ? (
+                          stat.value
+                        ) : (
+                          index === 2 ? `${(animatedValues[index] / 1000).toFixed(1)}K+` : `${animatedValues[index]}+`
+                        )}
+                      </>
+                    ) : (
+                      '0'
+                    )}
+                  </div>
                   <div className="text-white/60 text-sm">{stat.label}</div>
                 </div>
               ))}
@@ -53,7 +106,7 @@ const About = () => {
             <div className="relative">
               <div className="aspect-square rounded-2xl overflow-hidden image-hover-zoom">
                 <img
-                  src="https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=800&q=80"
+                  src="/images/about/about.png"
                   alt="Ceylonix.CMB Studio"
                   className="w-full h-full object-cover"
                 />
