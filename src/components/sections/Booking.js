@@ -1,12 +1,17 @@
 import React from 'react';
 import BookingForm from '../booking/BookingForm';
 
-const Booking = () => {
-  return (
-    <section id="booking" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/30">
-      <BookingForm />
-    </section>
-  );
-};
+/**
+ * Booking
+ * -----------------------------------------------------------------------
+ * Thin section wrapper for the BookingForm component, styled to match
+ * the surrounding luxury editorial theme (dark ink background).
+ * -----------------------------------------------------------------------
+ */
+const Booking = () => (
+  <section id="booking" className="relative py-28 sm:py-36 bg-ink-900">
+    <BookingForm />
+  </section>
+);
 
 export default Booking;
