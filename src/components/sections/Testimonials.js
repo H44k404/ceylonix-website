@@ -1,161 +1,142 @@
-import React, { useEffect, useState } from 'react';
-import { Star, Quote } from 'lucide-react';
-import Card from '../common/Card';
+import React, { useEffect, useRef, useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade } from 'swiper/modules';
+import { Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import SectionHeading from '../common/SectionHeading';
+import Reveal from '../common/Reveal';
+import localTestimonials from '../../data/testimonials';
+import siteConfig from '../../data/siteConfig';
+
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+
+/**
+ * Testimonials
+ * -----------------------------------------------------------------------
+ * Single large "journal entry" style testimonial slider (one quote at a
+ * time, fade transition) — feels editorial rather than a generic card
+ * grid. Falls back to the local testimonials table if the API has no
+ * approved reviews.
+ * -----------------------------------------------------------------------
+ */
+const getInitials = (name = '') =>
+  name.trim().split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+const avatarPalette = [
+  'from-brand-500 to-gold-500',
+  'from-gold-400 to-brand-600',
+  'from-brand-400 to-brand-700',
+  'from-gold-300 to-gold-700',
+];
 
 const Testimonials = () => {
-  const [testimonials, setTestimonials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [testimonials, setTestimonials] = useState(localTestimonials);
+  const swiperRef = useRef(null);
 
   useEffect(() => {
     const loadTestimonials = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/testimonials');
+        const res = await fetch(`${siteConfig.api.baseUrl}/testimonials`);
         const json = await res.json();
-        if (json && json.data) {
-          // Only show approved testimonials on the public site
-          const approved = json.data.filter(t => t.approved === true || t.approved === 'true');
-          setTestimonials(approved);
-          setLoading(false);
-          return;
+        if (json && Array.isArray(json.data)) {
+          const approved = json.data.filter((t) => t.approved === true || t.approved === 'true');
+          if (approved.length > 0) setTestimonials(approved);
         }
       } catch (err) {
-        console.warn('Testimonials API fetch failed:', err.message);
+        // Fall back silently to local testimonials table
       }
-
-      // If API fails, show empty testimonials (no fallback)
-      setTestimonials([]);
-      setLoading(false);
     };
-
     loadTestimonials();
   }, []);
 
-  const StarRating = ({ rating }) => (
-    <div className="flex gap-1">
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          className={`w-4 h-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-400'}`}
-        />
-      ))}
-    </div>
-  );
-
-  const AvatarWithInitials = ({ name }) => {
-    const getInitials = (name) => {
-      return name
-        .trim()
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    };
-
-    const colors = [
-      'from-orange-500 to-red-500',
-      'from-blue-500 to-cyan-500',
-      'from-purple-500 to-pink-500',
-      'from-green-500 to-emerald-500',
-      'from-yellow-500 to-orange-500',
-      'from-indigo-500 to-purple-500'
-    ];
-
-    // Generate consistent color based on name length
-    const colorIndex = name.length % colors.length;
-
-    return (
-      <div 
-        className={`w-12 h-12 rounded-full bg-gradient-to-br ${colors[colorIndex]} mr-4 flex items-center justify-center shadow-lg ring-2 ring-white/20`}
-      >
-        <span className="text-white font-bold text-base">
-          {getInitials(name)}
-        </span>
-      </div>
-    );
-  };
-
-  // Decode common HTML entities so stored content like &#039; renders as an apostrophe
-  const decodeHtmlEntities = (html) => {
-    if (!html) return '';
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const decoded = doc.documentElement.textContent || '';
-      // Fallback: replace common apostrophe entities if still present
-      return decoded.replace(/&amp;#0*39;|&#0*39;|&apos;/g, "'");
-    } catch (e) {
-      const txt = document.createElement('textarea');
-      txt.innerHTML = html;
-      return txt.value.replace(/&amp;#0*39;|&#0*39;|&apos;/g, "'");
-    }
-  };
-
   return (
-    <section id="testimonials" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/30">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 scroll-reveal">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-            <span className="text-white">Client </span>
-            <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Testimonials
-            </span>
-          </h2>
-          <p className="text-white/80 text-xl max-w-3xl mx-auto">
-            Don't just take our word for it. Here's what our satisfied clients have to say
-            about their experience working with Ceylonix.CMB.
-          </p>
-        </div>
+    <section id="testimonials" className="relative py-28 sm:py-36 bg-ink-900 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+        <SectionHeading
+          eyebrow="Client Journal"
+          title="Kind Words From"
+          highlight="Our Clients"
+        />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {testimonials.length > 0 ? (
-            testimonials.map((testimonial, index) => (
-              <Card key={index} className="scroll-reveal p-6 relative hover:transform hover:scale-105 transition-all duration-300">
-                <Quote className="w-8 h-8 text-orange-500/30 absolute top-4 right-4" />
+        <Reveal className="relative">
+          <Quote className="w-14 h-14 sm:w-16 sm:h-16 text-brand-500/20 mx-auto mb-6" strokeWidth={1} />
 
-                <div className="flex items-center mb-4">
-                  {testimonial.image ? (
-                    <img
-                      src={testimonial.image}
-                      alt={testimonial.name}
-                      className="w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-orange-500/50"
-                      onError={(e) => {
-                        // Fallback to initials if image fails to load
-                        e.target.style.display = 'none';
-                        e.target.parentElement.querySelector('.avatar-fallback').style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  
-                  {/* Fallback avatar with initials */}
-                  <div 
-                    className="avatar-fallback"
-                    style={{ display: testimonial.image ? 'none' : 'flex' }}
-                  >
-                    <AvatarWithInitials name={testimonial.name} />
+          <Swiper
+            modules={[Autoplay, EffectFade]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            autoplay={{ delay: 6000, disableOnInteraction: false }}
+            loop={testimonials.length > 1}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
+            }}
+            className="pb-4"
+          >
+            {testimonials.map((t) => (
+              <SwiperSlide key={t.id || t.name}>
+                <div className="text-center px-2 sm:px-10">
+                  <div className="flex justify-center gap-1 mb-6">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < (t.rating || 5) ? 'text-gold-400 fill-current' : 'text-white/20'
+                        }`}
+                      />
+                    ))}
                   </div>
 
-                  <div>
-                    <h4 className="text-white font-semibold">{testimonial.name}</h4>
-                    <p className="text-white/60 text-sm">{testimonial.role}</p>
+                  <p className="font-serif italic text-2xl sm:text-3xl lg:text-4xl text-white leading-snug mb-8 max-w-3xl mx-auto">
+                    "{t.text}"
+                  </p>
+
+                  <div className="flex items-center justify-center gap-4">
+                    {t.image ? (
+                      <img
+                        src={t.image}
+                        alt={t.name}
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-brand-500/40"
+                      />
+                    ) : (
+                      <div
+                        className={`w-12 h-12 rounded-full bg-gradient-to-br ${
+                          avatarPalette[(t.name || '').length % avatarPalette.length]
+                        } flex items-center justify-center text-ink-950 font-semibold text-sm`}
+                      >
+                        {getInitials(t.name)}
+                      </div>
+                    )}
+                    <div className="text-left">
+                      <div className="text-white font-medium text-sm">{t.name}</div>
+                      <div className="text-white/45 text-xs uppercase tracking-widest">{t.role}</div>
+                    </div>
                   </div>
                 </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
 
-                <StarRating rating={testimonial.rating} />
-
-                <p className="text-white/80 mt-4 leading-relaxed italic text-sm">
-                  {decodeHtmlEntities(testimonial.text)}
-                </p>
-              </Card>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-white/60 text-lg">
-                {loading ? 'Loading testimonials...' : 'No testimonials yet. Check back soon!'}
-              </p>
+          {testimonials.length > 1 && (
+            <div className="flex justify-center gap-4 mt-10">
+              <button
+                data-cursor="hover"
+                onClick={() => swiperRef.current?.slidePrev()}
+                className="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:border-brand-400 transition-colors"
+                aria-label="Previous testimonial"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                data-cursor="hover"
+                onClick={() => swiperRef.current?.slideNext()}
+                className="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:border-brand-400 transition-colors"
+                aria-label="Next testimonial"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           )}
-        </div>
+        </Reveal>
       </div>
     </section>
   );

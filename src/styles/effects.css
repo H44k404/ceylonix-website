@@ -1,0 +1,168 @@
+/**
+ * effects.css
+ * -----------------------------------------------------------------------
+ * Shared visual-effect utilities for the luxury redesign: film grain,
+ * marquee animation, magnetic cursor, gold dividers, reveal helpers.
+ * Imported once from App.js.
+ * -----------------------------------------------------------------------
+ */
+
+/* ---------- Film grain overlay ---------- */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Gradient text ---------- */
+.text-gradient-gold {
+  background: linear-gradient(100deg, #dcb26e 0%, #f9720f 55%, #cf9a4c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Elegant hairline divider ---------- */
+.hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 178, 110, 0.6), transparent);
+}
+
+/* ---------- Marquee (press / awards strip) ---------- */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 38s linear infinite;
+}
+
+.marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-row:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ---------- Vertical marquee for side labels ---------- */
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* ---------- Custom cursor ---------- */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: #f9720f;
+}
+
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(249, 114, 15, 0.6);
+  transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.cursor-ring.is-active {
+  width: 64px;
+  height: 64px;
+  background: rgba(249, 114, 15, 0.08);
+  border-color: rgba(249, 114, 15, 0.9);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-dot,
+  .cursor-ring {
+    display: none;
+  }
+}
+
+/* ---------- Ken Burns background pan/zoom ---------- */
+@keyframes kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate(-1%, -1%);
+  }
+}
+
+.kenburns {
+  animation: kenburns 10s ease-out forwards;
+}
+
+/* ---------- Image reveal mask (used on scroll entrance) ---------- */
+.mask-reveal {
+  clip-path: inset(0 0 0 0);
+}
+
+/* ---------- Glow ring for CTA buttons ---------- */
+.glow-ring {
+  position: relative;
+}
+
+.glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(120deg, #dcb26e, #f9720f, #dcb26e);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.glow-ring:hover::after {
+  opacity: 1;
+}
+
+/* ---------- Serif number badge ---------- */
+.numeral {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+}
+
+/* ---------- Scrollbar-safe full-bleed section ---------- */
+.full-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+/* ---------- Loader progress bar shimmer ---------- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #17171a 25%, #2c2c30 50%, #17171a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}

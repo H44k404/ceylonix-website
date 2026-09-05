@@ -4,15 +4,76 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Ceylonix.CMB - Premium Photography & Videography" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="description" content="Ceylonix.CMB is a premier fine-art photography and cinematic film studio based in Colombo, Sri Lanka — weddings, portraits, and brand storytelling." />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Ceylonix.CMB - Luxury Photography</title>
-    
+    <title>Ceylonix.CMB — Luxury Photography &amp; Cinematic Films</title>
+
+    <!-- Preconnects for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Display serif for headlines + clean sans for body copy -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Marcellus&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Cormorant Garamond"', 'serif'],
+              display: ['"Marcellus"', 'serif'],
+              sans: ['"Inter"', 'sans-serif'],
+            },
+            colors: {
+              ink: {
+                950: '#08080a',
+                900: '#0c0c0e',
+                850: '#111113',
+                800: '#17171a',
+                700: '#212124',
+                600: '#2c2c30',
+                500: '#3d3d42',
+              },
+              brand: {
+                50: '#fff4ec',
+                100: '#ffe4cc',
+                200: '#ffc699',
+                300: '#ffa35e',
+                400: '#ff8a33',
+                500: '#f9720f',
+                600: '#e2590a',
+                700: '#bb430a',
+                800: '#95350f',
+                900: '#7a2d10',
+              },
+              gold: {
+                50: '#fbf6ee',
+                100: '#f3e6cc',
+                200: '#e8cd9c',
+                300: '#dcb26e',
+                400: '#cf9a4c',
+                500: '#c2833a',
+                600: '#a1682d',
+                700: '#7d5023',
+                800: '#5a3a1a',
+                900: '#3a2510',
+              },
+            },
+            letterSpacing: {
+              widest2: '0.35em',
+            },
+          },
+        },
+      };
+    </script>
+
     <!-- Instagram Embed Script -->
     <script async src="//www.instagram.com/embed.js"></script>
   </head>

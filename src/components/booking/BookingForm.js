@@ -1,419 +1,221 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
-import Card from '../common/Card';
 import Alert from '../common/Alert';
+import Reveal from '../common/Reveal';
+import SectionHeading from '../common/SectionHeading';
 import { bookingAPI } from '../../services/api';
+
+/**
+ * BookingForm
+ * -----------------------------------------------------------------------
+ * Multi-field session enquiry form, restyled with underline inputs to
+ * match the luxury editorial theme. Validation and API wiring preserved
+ * from the original implementation.
+ * -----------------------------------------------------------------------
+ */
+const serviceTypes = [
+  { value: 'wedding', label: 'Wedding Photography / Film' },
+  { value: 'portrait', label: 'Portrait Session' },
+  { value: 'corporate', label: 'Corporate Event' },
+  { value: 'event', label: 'Social Event' },
+  { value: 'commercial', label: 'Commercial / Product' },
+];
+
+const durations = ['2 hours', '4 hours', '6 hours', '8 hours', 'Full day', 'Multiple days'];
+const budgets = ['Under $500', '$500 – $1,000', '$1,000 – $2,500', '$2,500 – $5,000', '$5,000+', 'Custom quote'];
+
+const Field = ({ label, children }) => (
+  <div>
+    <label className="block text-white/50 text-xs uppercase tracking-widest mb-2">{label}</label>
+    {children}
+  </div>
+);
+
+const inputClass =
+  'w-full bg-transparent border-b border-white/20 pb-3 text-white placeholder-white/25 focus:outline-none focus:border-brand-400 transition-colors duration-300';
+
+const selectClass = `${inputClass} [&>option]:bg-ink-900 [&>option]:text-white`;
 
 const BookingForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    serviceType: '',
-    eventDate: '',
-    eventTime: '',
-    duration: '',
-    location: '',
-    guestCount: '',
-    budget: '',
-    specialRequests: ''
+    name: '', email: '', phone: '', serviceType: '', eventDate: '', eventTime: '',
+    duration: '', location: '', guestCount: '', budget: '', specialRequests: '',
   });
   const [formStatus, setFormStatus] = useState('');
   const [alert, setAlert] = useState(null);
 
-  // Validation functions
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePhone = (phone) => {
-    // Basic phone validation - at least 7 digits
-    const phoneRegex = /\d{7,}/;
-    return phoneRegex.test(phone.replace(/\D/g, ''));
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone) => /\d{7,}/.test(phone.replace(/\D/g, ''));
 
   const validateForm = () => {
     const errors = [];
-
-    if (!formData.name || formData.name.trim().length === 0) {
-      errors.push('Full Name is required');
-    } else if (formData.name.trim().length < 2) {
-      errors.push('Full Name must be at least 2 characters');
-    }
-
-    if (!formData.email || formData.email.trim().length === 0) {
-      errors.push('Email Address is required');
-    } else if (!validateEmail(formData.email)) {
-      errors.push('Please enter a valid Email Address');
-    }
-
-    if (!formData.phone || formData.phone.trim().length === 0) {
-      errors.push('Phone Number is required');
-    } else if (!validatePhone(formData.phone)) {
-      errors.push('Please enter a valid Phone Number');
-    }
-
-    if (!formData.serviceType) {
-      errors.push('Please select a Service Type');
-    }
-
+    if (!formData.name.trim() || formData.name.trim().length < 2) errors.push('Full Name is required');
+    if (!formData.email.trim() || !validateEmail(formData.email)) errors.push('A valid Email Address is required');
+    if (!formData.phone.trim() || !validatePhone(formData.phone)) errors.push('A valid Phone Number is required');
+    if (!formData.serviceType) errors.push('Please select a Service Type');
     if (!formData.eventDate) {
       errors.push('Event Date is required');
     } else {
-      const selectedDate = new Date(formData.eventDate);
+      const selected = new Date(formData.eventDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (selectedDate < today) {
-        errors.push('Event Date must be in the future');
-      }
+      if (selected < today) errors.push('Event Date must be in the future');
     }
-
     return errors;
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate form
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
+    const errors = validateForm();
+    if (errors.length > 0) {
       setAlert({
         type: 'error',
         title: 'Form Validation Error',
         message: (
           <ul className="list-disc list-inside space-y-1">
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
+            {errors.map((err) => (
+              <li key={err}>{err}</li>
             ))}
           </ul>
-        )
+        ),
       });
       return;
     }
 
     try {
       setFormStatus('sending');
-
       const data = await bookingAPI.submit(formData);
-
       if (data.success) {
         setFormStatus('success');
         setAlert({
           type: 'success',
-          title: 'Booking Submitted Successfully!',
-          message: 'Thank you for your booking request. We\'ll review your details and contact you within 24 hours with availability and pricing.'
+          title: 'Booking Submitted',
+          message: "Thank you — we'll confirm availability and pricing within 24 hours.",
         });
         setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          serviceType: '',
-          eventDate: '',
-          eventTime: '',
-          duration: '',
-          location: '',
-          guestCount: '',
-          budget: '',
-          specialRequests: ''
+          name: '', email: '', phone: '', serviceType: '', eventDate: '', eventTime: '',
+          duration: '', location: '', guestCount: '', budget: '', specialRequests: '',
         });
       } else {
         throw new Error(data.message);
       }
     } catch (error) {
       setFormStatus('error');
-      
-      // Check if error has specific field errors from backend
-      if (error.errors && Array.isArray(error.errors)) {
-        setAlert({
-          type: 'error',
-          title: 'Submission Error',
-          message: (
-            <ul className="list-disc list-inside space-y-1">
-              {error.errors.map((err, index) => (
-                <li key={index}>{err}</li>
-              ))}
-            </ul>
-          )
-        });
-      } else {
-        setAlert({
-          type: 'error',
-          title: 'Submission Failed',
-          message: error.message || 'Sorry, there was an error submitting your booking. Please try again.'
-        });
-      }
-      console.error('Booking form error:', error);
+      setAlert({
+        type: 'error',
+        title: 'Submission Failed',
+        message: error.message || 'Something went wrong. Please try again.',
+      });
     } finally {
       setTimeout(() => setFormStatus(''), 2000);
     }
   };
 
-  const serviceTypes = [
-    { value: 'wedding', label: 'Wedding Photography/Videography' },
-    { value: 'portrait', label: 'Portrait Session' },
-    { value: 'corporate', label: 'Corporate Event' },
-    { value: 'event', label: 'Social Event' },
-    { value: 'commercial', label: 'Commercial/Product Photography' }
-  ];
-
-  const durations = [
-    '2 hours',
-    '4 hours',
-    '6 hours',
-    '8 hours',
-    'Full day',
-    'Multiple days'
-  ];
-
-  const budgets = [
-    'Under $500',
-    '$500 - $1,000',
-    '$1,000 - $2,500',
-    '$2,500 - $5,000',
-    '$5,000+',
-    'Custom quote needed'
-  ];
-
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
       {alert && (
-        <Alert
-          type={alert.type}
-          title={alert.title}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <Alert type={alert.type} title={alert.title} message={alert.message} onClose={() => setAlert(null)} />
       )}
-      <div className="text-center mb-12 scroll-reveal">
-        <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-          <span className="text-white">Book Your </span>
-          <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-            Session
-          </span>
-        </h2>
-        <p className="text-white/80 text-xl">
-          Ready to capture your special moments? Fill out the form below and we'll get back to you with availability and pricing.
-        </p>
-      </div>
 
-      <Card className="scroll-reveal p-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Personal Information */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="name" className="block text-white font-medium mb-2">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="Your full name"
-                required
-              />
-            </div>
+      <SectionHeading
+        eyebrow="Reserve Your Date"
+        title="Book Your"
+        highlight="Session"
+        description="Share a few details about your day and we'll follow up with availability, pricing, and next steps."
+      />
 
-            <div>
-              <label htmlFor="email" className="block text-white font-medium mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="your.email@example.com"
-                required
-              />
-            </div>
+      <Reveal>
+        <form onSubmit={handleSubmit} className="space-y-12">
+          <div className="grid sm:grid-cols-2 gap-10">
+            <Field label="Full Name *">
+              <input type="text" name="name" value={formData.name} onChange={handleChange} className={inputClass} placeholder="Your full name" required />
+            </Field>
+            <Field label="Email Address *">
+              <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputClass} placeholder="you@example.com" required />
+            </Field>
           </div>
 
-          <div>
-            <label htmlFor="phone" className="block text-white font-medium mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="+94 XX XXX XXXX"
-              required
-            />
-          </div>
-
-          {/* Service Details */}
-          <div>
-            <label htmlFor="serviceType" className="block text-white font-medium mb-2">
-              Service Type *
-            </label>
-            <select
-              id="serviceType"
-              name="serviceType"
-              value={formData.serviceType}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              required
-            >
-              <option value="">Select a service</option>
-              {serviceTypes.map(service => (
-                <option key={service.value} value={service.value} className="bg-gray-800">
-                  {service.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Event Details */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="eventDate" className="block text-white font-medium mb-2">
-                Event Date *
-              </label>
-              <input
-                type="date"
-                id="eventDate"
-                name="eventDate"
-                value={formData.eventDate}
-                onChange={handleInputChange}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="eventTime" className="block text-white font-medium mb-2">
-                Preferred Time
-              </label>
-              <input
-                type="time"
-                id="eventTime"
-                name="eventTime"
-                value={formData.eventTime}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="duration" className="block text-white font-medium mb-2">
-                Duration
-              </label>
-              <select
-                id="duration"
-                name="duration"
-                value={formData.duration}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="">Select duration</option>
-                {durations.map(duration => (
-                  <option key={duration} value={duration} className="bg-gray-800">
-                    {duration}
-                  </option>
+          <div className="grid sm:grid-cols-2 gap-10">
+            <Field label="Phone Number *">
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className={inputClass} placeholder="+94 XX XXX XXXX" required />
+            </Field>
+            <Field label="Service Type *">
+              <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={selectClass} required>
+                <option value="">Select a service</option>
+                {serviceTypes.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
-            </div>
+            </Field>
+          </div>
 
-            <div>
-              <label htmlFor="guestCount" className="block text-white font-medium mb-2">
-                Number of Guests
-              </label>
+          <div className="grid sm:grid-cols-2 gap-10">
+            <Field label="Event Date *">
               <input
-                type="number"
-                id="guestCount"
-                name="guestCount"
-                value={formData.guestCount}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="Approximate number"
+                type="date"
+                name="eventDate"
+                value={formData.eventDate}
+                onChange={handleChange}
+                min={new Date().toISOString().split('T')[0]}
+                className={inputClass}
+                required
               />
-            </div>
+            </Field>
+            <Field label="Preferred Time">
+              <input type="time" name="eventTime" value={formData.eventTime} onChange={handleChange} className={inputClass} />
+            </Field>
           </div>
 
-          <div>
-            <label htmlFor="location" className="block text-white font-medium mb-2">
-              Event Location
-            </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="Venue name and address"
-            />
+          <div className="grid sm:grid-cols-2 gap-10">
+            <Field label="Duration">
+              <select name="duration" value={formData.duration} onChange={handleChange} className={selectClass}>
+                <option value="">Select duration</option>
+                {durations.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Number of Guests">
+              <input type="number" name="guestCount" min="1" value={formData.guestCount} onChange={handleChange} className={inputClass} placeholder="Approximate number" />
+            </Field>
           </div>
 
-          <div>
-            <label htmlFor="budget" className="block text-white font-medium mb-2">
-              Budget Range
-            </label>
-            <select
-              id="budget"
-              name="budget"
-              value={formData.budget}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
+          <Field label="Event Location">
+            <input type="text" name="location" value={formData.location} onChange={handleChange} className={inputClass} placeholder="Venue name and address" />
+          </Field>
+
+          <Field label="Budget Range">
+            <select name="budget" value={formData.budget} onChange={handleChange} className={selectClass}>
               <option value="">Select budget range</option>
-              {budgets.map(budget => (
-                <option key={budget} value={budget} className="bg-gray-800">
-                  {budget}
-                </option>
+              {budgets.map((b) => (
+                <option key={b} value={b}>{b}</option>
               ))}
             </select>
-          </div>
+          </Field>
 
-          <div>
-            <label htmlFor="specialRequests" className="block text-white font-medium mb-2">
-              Special Requests or Details
-            </label>
+          <Field label="Special Requests or Details">
             <textarea
-              id="specialRequests"
               name="specialRequests"
-              value={formData.specialRequests}
-              onChange={handleInputChange}
               rows={4}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+              value={formData.specialRequests}
+              onChange={handleChange}
+              className={`${inputClass} resize-none`}
               placeholder="Any special requirements, themes, or additional details..."
             />
-          </div>
+          </Field>
 
-          <div className="text-center">
-            <Button
-              type="submit"
-              disabled={formStatus === 'sending'}
-              size="large"
-            >
+          <div className="text-center pt-4">
+            <Button type="submit" disabled={formStatus === 'sending'} size="large" data-cursor="hover">
               {formStatus === 'sending' ? 'Submitting...' : 'Submit Booking Request'}
             </Button>
-            <p className="text-white/60 text-sm mt-4">
-              We'll review your request and get back to you within 24 hours with availability and pricing details.
+            <p className="text-white/40 text-sm mt-5">
+              We'll review your request and respond within 24 hours with availability and pricing.
             </p>
           </div>
         </form>
-      </Card>
+      </Reveal>
     </div>
   );
 };

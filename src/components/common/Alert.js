@@ -35,12 +35,12 @@ const Alert = ({ type = 'success', title, message, onClose, autoClose = true, au
       className={`fixed top-20 right-4 z-50 max-w-md animate-in slide-in-from-top-2 fade-in duration-300`}
     >
       <div
-        className={`rounded-lg p-4 shadow-lg border ${
+        className={`rounded-lg p-4 shadow-2xl shadow-black/40 border backdrop-blur-md ${
           isSuccess
-            ? 'bg-green-500/10 border-green-500/30 backdrop-blur-sm'
+            ? 'bg-ink-900/90 border-brand-500/30'
             : isError
-            ? 'bg-red-500/10 border-red-500/30 backdrop-blur-sm'
-            : 'bg-blue-500/10 border-blue-500/30 backdrop-blur-sm'
+            ? 'bg-ink-900/90 border-red-500/30'
+            : 'bg-ink-900/90 border-blue-500/30'
         }`}
       >
         <div className="flex items-start gap-3">

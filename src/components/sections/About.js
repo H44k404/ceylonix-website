@@ -1,124 +1,160 @@
-import React, { useState, useEffect } from 'react';
-import { Award, Users, Camera } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useInView } from 'framer-motion';
+import * as Icons from 'lucide-react';
+import Reveal from '../common/Reveal';
+import Button from '../common/Button';
+import stats from '../../data/stats';
 
-const About = () => {
-  const [animatedValues, setAnimatedValues] = useState({
-    0: 0,
-    1: 0,
-    2: 0
-  });
+/**
+ * AnimatedCounter
+ * -----------------------------------------------------------------------
+ * Counts from 0 to `value` once the element enters the viewport.
+ * -----------------------------------------------------------------------
+ */
+const AnimatedCounter = ({ value, suffix = '' }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.6 });
+  const [display, setDisplay] = useState(0);
 
-  const stats = [
-    { icon: Award, value: '500+', numericValue: 500, label: 'Projects Completed' },
-    { icon: Users, value: '200+', numericValue: 200, label: 'Happy Clients' },
-    { icon: Camera, value: '50K+', numericValue: 50000, label: 'Photos Captured' }
-  ];
-
-  // Counter animation effect
   useEffect(() => {
-    const duration = 2000; // 2 seconds animation
-    const startTime = Date.now();
+    if (!inView) return;
+    const duration = 1600;
+    const start = performance.now();
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      const newValues = {};
-      stats.forEach((stat, index) => {
-        newValues[index] = Math.floor(stat.numericValue * progress);
-      });
-
-      setAnimatedValues(newValues);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.floor(eased * value));
+      if (progress < 1) requestAnimationFrame(tick);
     };
-
-    requestAnimationFrame(animate);
-  }, []);
+    requestAnimationFrame(tick);
+  }, [inView, value]);
 
   return (
-    <section id="about" className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div className="scroll-reveal">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-              <span className="text-white">About </span>
-              <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                Ceylonix.CMB
-              </span>
-            </h2>
+    <span ref={ref} className="numeral text-4xl sm:text-5xl text-white">
+      {display}
+      {suffix}
+    </span>
+  );
+};
 
-            <p className="text-white/80 text-lg mb-6 leading-relaxed">
-              We are a premier photography and videography studio based in Colombo,
-              specializing in capturing life's most precious moments. With over 5 years
-              of experience, we combine artistic vision with technical excellence to
-              create timeless memories.
-            </p>
-
-            <p className="text-white/80 text-lg mb-8 leading-relaxed">
-              Our passion lies in storytelling through visual media. Whether it's the
-              joy of a wedding day, the energy of a corporate event, or the intimacy
-              of a portrait session, we approach each project with creativity,
-              professionalism, and attention to detail.
-            </p>
-
-            <div className="grid grid-cols-3 gap-6">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center group cursor-pointer">
-                  <style>{`
-                    .stat-circle-${index} {
-                      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                      padding: 1rem;
-                    }
-                    
-                    .stat-circle-${index}:hover {
-                      padding: 0;
-                      border-radius: 50%;
-                    }
-                  `}</style>
-                  <div className={`stat-circle-${index} bg-orange-500/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-500/40 group-hover:shadow-lg group-hover:shadow-orange-500/30`}>
-                    <stat.icon className="w-8 h-8 text-orange-500 group-hover:scale-110 transition-transform duration-300" />
-                  </div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {animatedValues[index] > 0 ? (
-                      <>
-                        {animatedValues[index] === stats[index].numericValue ? (
-                          stat.value
-                        ) : (
-                          index === 2 ? `${(animatedValues[index] / 1000).toFixed(1)}K+` : `${animatedValues[index]}+`
-                        )}
-                      </>
-                    ) : (
-                      '0'
-                    )}
-                  </div>
-                  <div className="text-white/60 text-sm">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Image */}
-          <div className="scroll-reveal">
-            <div className="relative">
-              <div className="aspect-square rounded-2xl overflow-hidden image-hover-zoom">
+const About = () => {
+  return (
+    <section id="about" className="relative py-28 sm:py-36 bg-ink-950 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10">
+        <div className="grid lg:grid-cols-12 gap-14 lg:gap-10 items-center">
+          {/* Image cluster */}
+          <div className="lg:col-span-5 relative">
+            <Reveal direction="left">
+              <div className="relative aspect-[4/5] rounded-sm overflow-hidden">
                 <img
-                  src="/images/about/about.png"
-                  alt="Ceylonix.CMB Studio"
+                  src="/images/about/about-story.jpg"
+                  alt="Ceylonix.CMB behind the scenes"
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 border border-white/10" />
+              </div>
+            </Reveal>
+
+            <Reveal direction="up" delay={0.25} className="absolute -bottom-10 -right-6 sm:-right-10 w-40 sm:w-56">
+              <div className="relative aspect-[4/5] rounded-sm overflow-hidden border-4 border-ink-950 shadow-2xl shadow-black/60">
+                <img
+                  src="/images/about/about-detail.jpg"
+                  alt="Ceylonix.CMB studio detail"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-2xl">
-                <div className="text-3xl font-bold mb-1">5+</div>
-                <div className="text-sm opacity-90">Years Experience</div>
+            </Reveal>
+
+            <Reveal
+              delay={0.4}
+              className="absolute -top-6 -left-4 sm:-left-8 bg-ink-900/90 backdrop-blur-md border border-white/10 rounded-full px-6 py-4 flex items-center gap-3"
+            >
+              <span className="numeral text-3xl text-brand-400">{new Date().getFullYear() - 2019}+</span>
+              <span className="text-white/70 text-xs uppercase tracking-widest leading-tight">
+                Years of<br />Storytelling
+              </span>
+            </Reveal>
+          </div>
+
+          {/* Copy */}
+          <div className="lg:col-span-7 lg:pl-6">
+            <Reveal>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="h-px w-8 bg-brand-400/70" />
+                <span className="text-xs uppercase tracking-[0.4em] text-brand-400 font-medium">
+                  The Studio
+                </span>
               </div>
-            </div>
+            </Reveal>
+
+            <Reveal delay={0.08}>
+              <h2 className="font-serif font-medium leading-[1.05] text-4xl sm:text-5xl lg:text-6xl text-white mb-8">
+                We don't just take photographs —
+                <span className="text-gradient-gold italic"> we preserve feeling.</span>
+              </h2>
+            </Reveal>
+
+            <Reveal delay={0.16}>
+              <p className="text-white/65 text-base sm:text-lg leading-relaxed mb-6 max-w-2xl">
+                {' '}
+                Ceylonix.CMB is a boutique photography and cinematography studio based in
+                Colombo, Sri Lanka. For over seven years we have crafted intimate,
+                editorial-grade imagery for couples, individuals and brands who want
+                their story told with restraint, elegance and honesty.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.22}>
+              <p className="text-white/50 text-sm sm:text-base leading-relaxed mb-10 max-w-2xl">
+                Every session begins with a conversation, not a checklist. We work in
+                natural light wherever possible, favour candid moments over posed
+                perfection, and finish every frame by hand — so what you receive feels
+                like a piece of art, not a product.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.3}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10 pb-10 border-b border-white/10">
+                {stats.map((stat) => {
+                  const Icon = Icons[stat.icon] || Icons.Camera;
+                  return (
+                    <div key={stat.id}>
+                      <Icon className="w-5 h-5 text-brand-400 mb-3" strokeWidth={1.5} />
+                      <div>
+                        <AnimatedCounter value={stat.numericValue} suffix={stat.suffix} />
+                      </div>
+                      <div className="text-white/45 text-xs uppercase tracking-widest mt-1">
+                        {stat.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.36}>
+              <Button variant="outline" data-cursor="hover">
+                Meet the Team
+              </Button>
+            </Reveal>
           </div>
         </div>
       </div>
+
+      {/* Decorative faint watermark word */}
+      <motion.div
+        aria-hidden
+        className="hidden lg:block absolute -bottom-16 left-0 right-0 text-center select-none pointer-events-none"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 0.04 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5 }}
+      >
+        <span className="font-serif text-[14rem] leading-none text-white">Craft</span>
+      </motion.div>
     </section>
   );
 };

@@ -1,227 +1,221 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Instagram, ExternalLink } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, ChevronLeft, ChevronRight, Instagram, ExternalLink, Plus } from 'lucide-react';
+import Reveal from '../common/Reveal';
+import SectionHeading from '../common/SectionHeading';
+import portfolioItems, { portfolioCategories } from '../../data/portfolio';
+import siteConfig from '../../data/siteConfig';
 
+/**
+ * Portfolio
+ * -----------------------------------------------------------------------
+ * Filterable, animated masonry-style gallery. Tries the live backend API
+ * first (so the admin dashboard stays fully functional); falls back to
+ * the local `data/portfolio.js` table when the API is unavailable or
+ * empty. Includes a full-screen lightbox with keyboard navigation.
+ * -----------------------------------------------------------------------
+ */
 const Portfolio = () => {
-  const [portfolioItems, setPortfolioItems] = useState([]);
-  const [isVisible, setIsVisible] = useState(false);
-  const [brokenImages, setBrokenImages] = useState(new Set());
-  const portfolioRef = useRef(null);
+  const [items, setItems] = useState(portfolioItems);
+  const [usingFallback, setUsingFallback] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [lightboxIndex, setLightboxIndex] = useState(null);
 
-  // Default fallback colors for broken images
-  const getPlaceholderColor = (id, isEmbed = false) => {
-    if (isEmbed) {
-      // Use orange gradient for embed cards to match portfolio theme
-      return 'from-orange-500 to-orange-700';
-    }
-    const colors = ['from-orange-400 to-orange-600', 'from-purple-400 to-purple-600', 'from-blue-400 to-blue-600', 'from-pink-400 to-pink-600', 'from-green-400 to-green-600'];
-    return colors[id % colors.length];
-  };
-
-  // Load items from backend API only
   useEffect(() => {
     const loadFromApi = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/portfolio');
+        const res = await fetch(`${siteConfig.api.baseUrl}/portfolio`);
         const json = await res.json();
-        if (json && json.data) {
-          setPortfolioItems(json.data);
-          return;
+        if (json && Array.isArray(json.data) && json.data.length > 0) {
+          setItems(json.data);
+          setUsingFallback(false);
         }
       } catch (err) {
-        console.warn('Portfolio API fetch failed:', err.message);
+        // Silently fall back to local table — no console noise in production UX
       }
-      // If API fails, show empty portfolio (no fallback to defaults)
-      setPortfolioItems([]);
     };
-
     loadFromApi();
   }, []);
 
-  const loadDefaultItems = () => {
-    // Function removed - only show items from admin panel
-  };
+  const filtered = items.filter((item) =>
+    activeCategory === 'all' ? true : item.category === activeCategory
+  );
 
-  // Intersection Observer for scroll detection
+  const openLightbox = (index) => setLightboxIndex(index);
+  const closeLightbox = () => setLightboxIndex(null);
+  const showPrev = () =>
+    setLightboxIndex((i) => (i === null ? null : (i - 1 + filtered.length) % filtered.length));
+  const showNext = () =>
+    setLightboxIndex((i) => (i === null ? null : (i + 1) % filtered.length));
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    if (portfolioRef.current) {
-      observer.observe(portfolioRef.current);
-    }
-
-    return () => {
-      if (portfolioRef.current) {
-        observer.unobserve(portfolioRef.current);
-      }
+    const handleKey = (e) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') showPrev();
+      if (e.key === 'ArrowRight') showNext();
     };
-  }, []);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxIndex, filtered.length]);
 
-  // Load Instagram embed script when section is visible
-  useEffect(() => {
-    if (window.instgrm && isVisible) {
-      window.instgrm.Embeds.process();
-    }
-  }, [isVisible]);
-
-  const handleImageError = (itemId) => {
-    setBrokenImages(prev => new Set([...prev, itemId]));
-  };
-
-  const handleEmbedClick = (embedData) => {
-    if (!embedData) {
-      console.warn('No URL provided for embed');
-      return;
-    }
-
-    // Extract the actual URL from Instagram embed HTML
-    let actualUrl = embedData;
-    
-    // If it's HTML (contains 'data-instgrm-permalink'), extract the URL from the attribute
-    if (embedData.includes('data-instgrm-permalink')) {
-      const match = embedData.match(/data-instgrm-permalink="([^"]+)"/);
-      if (match && match[1]) {
-        actualUrl = match[1];
-        // Decode HTML entities like &amp; to &
-        actualUrl = actualUrl.replace(/&amp;/g, '&');
-      }
-    }
-
-    // Ensure it's a valid URL
-    if (!actualUrl.startsWith('http')) {
-      actualUrl = `https://${actualUrl}`;
-    }
-
-    window.open(actualUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const getPlatformIcon = (platform) => {
-    switch(platform) {
-      case 'instagram':
-        return <Instagram className="w-5 h-5 text-orange-500" />;
-      case 'tiktok':
-        return <span className="text-orange-500 text-sm font-bold">TT</span>;
-      case 'facebook':
-        return <span className="text-orange-500 text-sm font-bold">FB</span>;
-      default:
-        return <Instagram className="w-5 h-5 text-orange-500" />;
-    }
-  };
+  const activeItem = lightboxIndex !== null ? filtered[lightboxIndex] : null;
 
   return (
-    <section id="portfolio" ref={portfolioRef} className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 scroll-reveal opacity-0 animate-in">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-            <span className="text-white">Our </span>
-            <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Portfolio
-            </span>
-          </h2>
-          <p className="text-white/80 text-xl max-w-3xl mx-auto">
-            Explore our diverse collection of photography and videography work.
-            Each project showcases our commitment to excellence and creative storytelling.
-          </p>
-        </div>
+    <section id="portfolio" className="relative py-28 sm:py-36 bg-ink-950">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10">
+        <SectionHeading
+          eyebrow="Selected Work"
+          title="A Glimpse Into Our"
+          highlight="Portfolio"
+          description="A curated selection of weddings, portraits and events — each frame chosen for how honestly it tells the story."
+        />
 
-        {/* Portfolio Grid */}
-        {portfolioItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolioItems.map(item => (
-              <div key={item.id} className="scroll-reveal">
-                {item.isEmbed && item.embedUrl ? (
-                  // Platform Embed Card
-                  <div
-                    onClick={() => handleEmbedClick(item.embedUrl)}
-                    role="button"
-                    tabIndex="0"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        handleEmbedClick(item.embedUrl);
-                      }
-                    }}
-                    className="relative group h-64 rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-orange-600/20 cursor-pointer transition-all duration-300 hover:shadow-xl"
-                  >
-                    {brokenImages.has(item.id) ? (
-                      <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderColor(item.id, true)} flex items-center justify-center`}>
-                        <div className="text-center">
-                          <Instagram className="w-16 h-16 text-white mx-auto mb-2 opacity-50" />
-                          <p className="text-white text-sm">Media Preview</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={item.thumbnailImage}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        loading="lazy"
-                        onError={() => handleImageError(item.id)}
-                      />
-                    )}
-                    
-                    {/* Dark overlay */}
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
-                    
-                    {/* Content */}
-                    <div className="absolute inset-0 flex flex-col justify-between p-4">
-                      {/* External Link Button - appears on hover */}
-                      <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button className="bg-orange-500/80 hover:bg-orange-500 rounded-full p-2 transition-colors transform scale-0 group-hover:scale-100 duration-300">
-                          <ExternalLink className="w-5 h-5 text-white" />
-                        </button>
-                      </div>
-                      
-                      {/* Title and Platform badge */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          {getPlatformIcon(item.platform)}
-                          <span className="text-orange-500 text-sm font-semibold uppercase tracking-wider">
-                            {item.platform}
-                          </span>
-                        </div>
-                        <h3 className="text-white font-semibold text-lg">{item.title}</h3>
-                        <p className="text-white/70 text-sm">Click to view</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Regular Photo Gallery Item
-                  <div className="relative group h-64 rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-orange-600/20 hover:shadow-xl transition-all duration-300">
-                    {brokenImages.has(item.id) ? (
-                      <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderColor(item.id)} flex items-center justify-center`}>
-                        <div className="text-center">
-                          <div className="w-20 h-20 bg-white/20 rounded-xl mx-auto mb-2" />
-                          <p className="text-white text-sm">{item.category}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        loading="lazy"
-                        onError={() => handleImageError(item.id)}
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex flex-col justify-end p-4">
-                      <h3 className="text-white font-semibold">{item.title}</h3>
-                      <p className="text-white/70 text-sm capitalize">{item.category}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+        {/* Category filters */}
+        {usingFallback && (
+          <Reveal className="flex flex-wrap justify-center gap-3 mb-14">
+            {portfolioCategories.map((cat) => (
+              <button
+                key={cat.id}
+                data-cursor="hover"
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-5 py-2 rounded-full text-xs uppercase tracking-widest transition-all duration-300 border ${
+                  activeCategory === cat.id
+                    ? 'bg-brand-500 border-brand-500 text-ink-950 font-medium'
+                    : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                {cat.label}
+              </button>
             ))}
-          </div>
+          </Reveal>
+        )}
+
+        {/* Grid */}
+        {filtered.length > 0 ? (
+          <motion.div
+            layout
+            className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4"
+          >
+            <AnimatePresence>
+              {filtered.map((item, index) => (
+                <motion.div
+                  layout
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  className={`relative group cursor-pointer overflow-hidden rounded-sm ${
+                    index % 5 === 0 ? 'col-span-2 row-span-2 aspect-square' : 'aspect-[3/4]'
+                  }`}
+                  onClick={() =>
+                    item.isEmbed && item.embedUrl
+                      ? window.open(item.embedUrl, '_blank', 'noopener,noreferrer')
+                      : openLightbox(index)
+                  }
+                  data-cursor="hover"
+                >
+                  <img
+                    src={item.isEmbed ? item.thumbnailImage : item.image}
+                    alt={item.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                    <span className="text-brand-400 text-[10px] uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      {item.isEmbed && <Instagram className="w-3 h-3" />}
+                      {item.category || item.platform}
+                    </span>
+                    <h3 className="text-white font-serif text-lg sm:text-xl leading-tight">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
+                    {item.isEmbed ? (
+                      <ExternalLink className="w-3.5 h-3.5 text-white" />
+                    ) : (
+                      <Plus className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-white/60 text-lg">No portfolio items yet. Check back soon!</p>
+          <div className="text-center py-16">
+            <p className="text-white/50">No portfolio items yet. Check back soon.</p>
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {activeItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[90] bg-black/95 backdrop-blur-md flex items-center justify-center px-4"
+            onClick={closeLightbox}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10"
+              aria-label="Close"
+            >
+              <X size={28} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                showPrev();
+              }}
+              className="absolute left-4 sm:left-8 text-white/60 hover:text-white transition-colors z-10"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={36} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                showNext();
+              }}
+              className="absolute right-4 sm:right-8 text-white/60 hover:text-white transition-colors z-10"
+              aria-label="Next image"
+            >
+              <ChevronRight size={36} />
+            </button>
+
+            <motion.div
+              key={activeItem.id}
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-4xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={activeItem.image}
+                alt={activeItem.title}
+                className="w-full max-h-[80vh] object-contain mx-auto rounded-sm"
+              />
+              <div className="text-center mt-5">
+                <span className="text-brand-400 text-xs uppercase tracking-widest">
+                  {activeItem.category}
+                </span>
+                <h3 className="text-white font-serif text-2xl mt-1">{activeItem.title}</h3>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
